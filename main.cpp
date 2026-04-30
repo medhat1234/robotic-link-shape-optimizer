@@ -162,6 +162,7 @@ int main() {
     int shapeChoice, matChoice;
     double L, mp, alpha, d1, d2 = 0;
     Material selectedMaterial;
+    string entry;
 
     cout <<"Robot link optimizer made by team 7"<<endl;
     cout <<"-----------------------------------"<<endl;
@@ -208,7 +209,8 @@ int main() {
 
     selectActuation(ml, L, mp, alpha, motors, gearboxes);
 
-    cin.get();
+    cout<<"enter anything to close"<<endl;
+    cin>>entry; //to avoid auto close
 
     return 0;
 }
