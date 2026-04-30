@@ -208,5 +208,7 @@ int main() {
 
     selectActuation(ml, L, mp, alpha, motors, gearboxes);
 
+    cin.get();
+
     return 0;
 }
