@@ -38,16 +38,25 @@ struct Gearbox {
 };
 
 vector<Motor> motors = {
-      // {"name",torque in N mm, speedRpm, mass_kg, diameter mm , width mm}
-    {"IDX 56 L, Ø56 mm, brushless, 400 W, with Hall sensors and Encoder EASY INT 1024CPT",  1040, 2900,  1.196,  56, 160},
-    {"IDX 70 L, Ø70 mm, brushless, 900 W, with Hall sensors and Encoder EASY INT 1024CPT",  2840, 1920,    0.82,  70, 195},
+      // {"name",torque in N m, speedRpm, mass_kg, diameter mm , width mm}
+    {"IDX 70 S, brushless, 600 W",  1.400, 5000,  1.595,  70, 125.5},
+    {"IDX 70 M, brushless, 800 W",  2.480, 3670,    2.295,  70, 160.5},
+    {"IDX 70 L, brushless, 900 W",  3.710, 2430,    2.995,  70, 195.5},
+    {"IDX 56 L, brushless, 400 W",  1.040, 3430,    1.196,  56, 160},
+    {"IDX 56 M, brushless, 350 W",  0.645, 5740,    0.815,  56, 130}
+
 
 
 };
 
 vector<Gearbox> gearboxes = {
-       // {"name",torque in N mm, efficiency, gearRatio, mass_grams, diameter mm , width mm}
-    {"Planetary Standard", 0.85, 50, 300, 40, 30}
+       // {"name", efficiency, gearRatio, mass_kg, diameter mm , width mm}
+    {"Planetary Gearhead GP 16 A, Metal Version, Sleeve Bearing", 0.85, 4.4, 0.020, 16, 18.1},
+    {"Planetary Gearhead GP 22 A, Metal Version", 0.59, 84, 0.068, 22, 40},
+    {"Planetary Gearhead GP 22 C", 0.70, 14, 0.055, 22, 35.35},
+    {"Planetary Gearhead GP 32 A, Metal Version", 0.60, 246, 0.226, 32, 54.85},
+    {"Planetary Gearhead GP 42 C, 3 - 15 Nm, Ceramic Version", 0.72, 43, 0.460, 42, 73}
+
 
 };
 
@@ -154,8 +163,10 @@ int main() {
     double L, mp, alpha, d1, d2 = 0;
     Material selectedMaterial;
 
+    cout <<"Robot link optimizer made by team 7"<<endl;
+    cout <<"-----------------------------------"<<endl;
     // 1. Shape Selection
-    cout << "Select Shape (0 for Circle, 1 for Rectangle): "; cin >> shapeChoice;
+    cout << "Select Link's cross section Shape (0 for Circle, 1 for Rectangle): "; cin >> shapeChoice;
 
     // 2. Material Selection
     cout << "Materials available:\n";
