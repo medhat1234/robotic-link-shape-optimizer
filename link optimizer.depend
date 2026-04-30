@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1777554405 source:d:\asu c++\link optimizer\main.cpp
+	<iostream>
+	<vector>
+	<string>
+	<cmath>
+	<iomanip>
+
