@@ -2,57 +2,52 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
 #include <iomanip>
 
 using namespace std;
 
-// --- Physical Constants ---
-const double GRAVITY_MM_S2 = 9810.0; // Gravity in mm/s^2
+// Constants
+const double G = 9.81;
 const double PI = 3.14159265358979323846;
-// Converts g/cm^3 to g/mm^3 (1 cm^3 = 1000 mm^3)
-const double DENSITY_CONVERSION = 0.001;
+
+// --- Data Structures ---
 
 struct Material {
     string name;
-    double yieldStrengthMPa;
-    double densityG_CM3;
+    double yieldStrength; // MPa
+    double density;       // g/cm^3
 };
 
-struct Motor { //dont use frameless
+struct Motor {
     string name;
-    double torqueNmm;
-    double efficiency;
-
-    double speedRPM;
-    double massGrams;
-    double diameterMM;
-    double widthMM;
-
+    double torque;   // Nm
+    double speed;    // RPM
+    double mass;     // kg
+    double diameter; // mm
+    double width;    // mm
 };
 
 struct Gearbox {
     string name;
-    double torqueNmm;
+    double ratio;
     double efficiency;
-
-    double gearRatio;
-    double massGrams;
-    double diameterMM;
-    double widthMM;
+    double mass;     // kg
+    double diameter; // mm
+    double width;    // mm
 };
 
-// Global Data Collections
 vector<Motor> motors = {
-      // {"name",torque in N mm, efficiency, speedRpm, mass_grams, diameter mm , width mm}
-    {"IDX 56 L, Ø56 mm, brushless, 400 W, with Hall sensors and Encoder EASY INT 1024CPT",  1040, 0.85,  2900,  1196,  56, 160},
-    {"IDX 70 L, Ø70 mm, brushless, 900 W, with Hall sensors and Encoder EASY INT 1024CPT",  2840, 0.85,  1920,    82,  22, 195},
+      // {"name",torque in N mm, speedRpm, mass_kg, diameter mm , width mm}
+    {"IDX 56 L, Ø56 mm, brushless, 400 W, with Hall sensors and Encoder EASY INT 1024CPT",  1040, 2900,  1.196,  56, 160},
+    {"IDX 70 L, Ø70 mm, brushless, 900 W, with Hall sensors and Encoder EASY INT 1024CPT",  2840, 1920,    0.82,  70, 195},
 
 
 };
 
 vector<Gearbox> gearboxes = {
        // {"name",torque in N mm, efficiency, gearRatio, mass_grams, diameter mm , width mm}
-    {"Planetary Standard", 50000, 0.85, 50, 300, 40, 30}
+    {"Planetary Standard", 0.85, 50, 300, 40, 30}
 
 };
 
@@ -68,91 +63,77 @@ vector<Material> materials = {
     {"Stainless steel", 275, 7.86},
     {"Tungsten",        941, 19.25}
 };
+// --- Stress Analysis & Optimization ---
 
-// --- Part 1: Stress Analysis & Optimization ---
+void optimizeLink(Material mat, int type, double& dim1_mm, double& dim2_mm, double L_mm, double mp_kg, double alpha) {
+    double rho_kg_m3 = mat.density * 1000.0;
+    double sigma_yield_pa = mat.yieldStrength * 1e6;
+    double L_m = L_mm / 1000.0;
 
-void optimizeLink(Material selectedMat, bool isRectangular, double& dim1, double& dim2,
-                  double linkLengthMM, double payloadMassGrams, double angularAccel) {
+    double dim1_m = dim1_mm / 1000.0;
+    double dim2_m = dim2_mm / 1000.0;
 
-    double yieldLimit = selectedMat.yieldStrengthMPa;
-    // Convert g/cm^3 to g/mm^3 for internal math
-    double internalDensity = selectedMat.densityG_CM3 * DENSITY_CONVERSION;
-
-    double calculatedStress = 0;
-    double linkMassGrams, bendingMoment;
+    double sigma_pa = 0;
+    double ml_kg, I_m4, M_nm;
 
     while (true) {
-        // 1. Calculate Mass (Volume in mm^3 * Density in g/mm^3)
-        if (isRectangular) {
-            linkMassGrams = internalDensity * (dim1 * dim2 * linkLengthMM);
-        } else {
-            linkMassGrams = internalDensity * (PI * pow(dim1, 2) * linkLengthMM);
+        // 1. Calculate Mass
+        if (type == 1) // Rectangle
+            ml_kg = rho_kg_m3 * (dim1_m * dim2_m * L_m);
+        else           // Circle
+            ml_kg = rho_kg_m3 * (PI * pow(dim1_m, 2) * L_m);
+
+        // 2. Calculate Moment (Static + Inertial)
+        double weightEffect = (ml_kg * G * (L_m / 2.0)) + (mp_kg * G * L_m);
+        double inertialEffect = (ml_kg * pow(L_m / 2.0, 2) * alpha) + (mp_kg * pow(L_m, 2) * alpha);
+        M_nm = weightEffect + inertialEffect;
+
+        // 3. Moment of Inertia & Stress
+        if (type == 1) { // Rectangle
+            I_m4 = (dim1_m * pow(dim2_m, 3)) / 12.0;
+            sigma_pa = (M_nm * (dim2_m / 2.0)) / I_m4;
+        } else {         // Circle
+            I_m4 = (PI * pow(dim1_m, 4)) / 4.0;
+            sigma_pa = (M_nm * dim1_m) / I_m4;
         }
 
-        // 2. Calculate Bending Moment (N*mm)
-        double weightEffect = (linkMassGrams * GRAVITY_MM_S2 * (linkLengthMM / 2.0)) +
-                              (payloadMassGrams * GRAVITY_MM_S2 * linkLengthMM);
-
-        double inertialEffect = (linkMassGrams * pow(linkLengthMM / 2.0, 2) * angularAccel) +
-                                (payloadMassGrams * pow(linkLengthMM, 2) * angularAccel);
-
-        bendingMoment = (weightEffect + inertialEffect) / 1000.0;
-
-        // 3. Moment of Inertia & Stress (MPa)
-        if (isRectangular) {
-            double momentOfInertia = (dim1 * pow(dim2, 3)) / 12.0;
-            calculatedStress = (bendingMoment * (dim2 / 2.0)) / momentOfInertia;
-        } else {
-            double momentOfInertia = (PI * pow(dim1, 4)) / 4.0;
-            calculatedStress = (bendingMoment * dim1) / momentOfInertia;
-        }
-
-        // 4. Iterative Optimization
-        if (calculatedStress > yieldLimit) {
-            dim1 *= 1.01;
-            if (isRectangular) dim2 *= 1.01;
-        } else if (calculatedStress < (yieldLimit * 0.96)) {
-            dim1 *= 0.99;
-            if (isRectangular) dim2 *= 0.99;
+        // 4. Optimization Logic
+        if (sigma_pa > sigma_yield_pa) {
+            dim1_m *= 1.01;
+            if (type == 1) dim2_m *= 1.01;
+        } else if (sigma_pa < (sigma_yield_pa * 0.95)) { // 5% margin
+            dim1_m *= 0.99;
+            if (type == 1) dim2_m *= 0.99;
         } else {
             break;
         }
     }
 
-    //cout << fixed << setprecision(2);
+    dim1_mm = dim1_m * 1000.0;
+    dim2_mm = dim2_m * 1000.0;
+
     cout << "\n--- Optimized Link Results ---" << endl;
-    cout << "Final Dimension(s): " << dim1 << (isRectangular ? " x " + to_string(dim2) : "") << " mm" << endl;
-    cout << "Final Mass: " << linkMassGrams << " g" << endl;
-    cout << "Final Stress: " << calculatedStress << " MPa" << endl;
+    cout << "Final Dimension(s): " << dim1_mm << (type == 1 ? " x " + to_string(dim2_mm) : "") << " mm" << endl;
+    cout << "Final Mass: " << fixed << setprecision(3) << ml_kg << " kg" << endl;
+    cout << "Final Stress: " << sigma_pa / 1e6 << " MPa" << endl;
 }
 
-// --- Part 2: Motor & Gearbox Selection ---
-
-void selectActuation(double linkMassG, double lengthMM, double payloadMassG,
-                     double angularAccel, vector<Motor>& motorList, vector<Gearbox>& gearboxList) {
-
-    double torqueReq = ((linkMassG * GRAVITY_MM_S2 * (lengthMM / 2.0)) +
-                        (payloadMassG * GRAVITY_MM_S2 * lengthMM) +
-                        (linkMassG * pow(lengthMM / 2.0, 2) * angularAccel) +
-                        (payloadMassG * pow(lengthMM, 2) * angularAccel)) / 1000.0;
+void selectActuation(double ml_kg, double L_mm, double mp_kg, double alpha, const vector<Motor>& motors, const vector<Gearbox>& gearboxes) {
+    double L_m = L_mm / 1000.0;
+    double T_req = (ml_kg * G * (L_m / 2.0)) + (mp_kg * G * L_m) + (ml_kg * pow(L_m / 2.0, 2) * alpha) + (mp_kg * pow(L_m, 2) * alpha);
 
     double bestCost = 1e18;
     string bestCombo = "None";
 
-    for (const auto& m : motorList) {
-        for (const auto& g : gearboxList) {
-            double outputTorque = m.torqueNmm * g.gearRatio * g.efficiency*m.efficiency;
-            if(outputTorque > g.torqueNmm) //capping the output torque to max gearbox can withstand
-            {
-                outputTorque = g.torqueNmm;
-            }
+    for (const auto& m : motors) {
+        for (const auto& g : gearboxes) {
+            double T_out = m.torque * g.ratio * g.efficiency;
 
-            if (outputTorque >= torqueReq) {
-                double totalMass = m.massGrams + g.massGrams;
-                double maxDiameter = max(m.diameterMM, g.diameterMM);
-                double totalWidth = m.widthMM + g.widthMM;
-
-                double cost = totalMass + (maxDiameter * 10) + (totalWidth * 10);
+            if (T_out >= T_req) {
+                double totalMass = m.mass + g.mass;
+                double maxDiam = max(m.diameter, g.diameter);
+                double totalWidth = m.width + g.width;
+                double cost = totalMass + (maxDiam / 100.0) + (totalWidth / 100.0);
 
                 if (cost < bestCost) {
                     bestCost = cost;
@@ -163,47 +144,58 @@ void selectActuation(double linkMassG, double lengthMM, double payloadMassG,
     }
 
     cout << "\n--- Actuation Selection ---" << endl;
-    cout << "Required Torque: " << torqueReq/1000 << " N.m" << endl;
-    cout << "Best Combination: " << bestCombo << " (Cost score: " << bestCost << ")" << endl;
+    cout << "Required Torque: " << T_req << " Nm" << endl;
+    cout << "Best Combination: " << bestCombo << " (Cost Score: " << bestCost << ")" << endl;
 }
 
 int main() {
-    int shapeChoice;
-    int materialIndex;
-    double linkLength, payloadMass, accel, dim1, dim2 = 0;
 
-    cout << "================ ROBOTIC LINK OPTIMIZER ================" << endl;
+    int shapeChoice, matChoice;
+    double L, mp, alpha, d1, d2 = 0;
+    Material selectedMaterial;
 
-    for(int i = 0; i < materials.size(); i++) {
-        cout << i << " : " << materials[i].name << endl;
+    // 1. Shape Selection
+    cout << "Select Shape (0 for Circle, 1 for Rectangle): "; cin >> shapeChoice;
+
+    // 2. Material Selection
+    cout << "Materials available:\n";
+    for (int i = 0; i < materials.size(); i++) {
+        cout << i << ": " << materials[i].name << " (Yield: " << materials[i].yieldStrength << "MPa)\n";
     }
-    cout << "9 : Define Custom Material" << endl;
-    cout << "Choice: "; cin >> materialIndex;
+    cout << materials.size() << ": Define Custom Material\n";
+    cout << "Choice: "; cin >> matChoice;
 
-    if(materialIndex == 9) {
-        Material custom;
-        cout << "Enter Name, Yield(MPa), Density(g/cm^3): ";
-        cin >> custom.name >> custom.yieldStrengthMPa >> custom.densityG_CM3;
-        materials.push_back(custom);
+    if (matChoice == materials.size()) {
+        cout << "Enter Material Name: "; cin >> selectedMaterial.name;
+        cout << "Enter Yield Strength (MPa): "; cin >> selectedMaterial.yieldStrength;
+        cout << "Enter Density (g/cm^3): "; cin >> selectedMaterial.density;
+    } else {
+        selectedMaterial = materials[matChoice];
     }
 
-    cout << "Select Shape (0: Circle, 1: Rectangle): "; cin >> shapeChoice;
-    cout << "Link Length (mm): "; cin >> linkLength;
-    cout << "Payload Mass (g): "; cin >> payloadMass;
-    cout << "Angular Accel (rad/s^2): "; cin >> accel;
-    cout << (shapeChoice ? "Initial Width (mm): " : "Initial Radius (mm): "); cin >> dim1;
-    if (shapeChoice) { cout << "Initial Height (mm): "; cin >> dim2; }
+    // 3. Dimensional Inputs
+    cout << "Link Length (mm): "; cin >> L;
+    cout << "Payload Mass (kg): "; cin >> mp;
+    cout << "Max Acceleration (rad/s^2): "; cin >> alpha;
 
-    bool isRect = (shapeChoice == 1);
-    optimizeLink(materials[materialIndex], isRect, dim1, dim2, linkLength, payloadMass, accel);
+    if (shapeChoice) {
+        cout << "Initial Width (mm): "; cin >> d1;
+        cout << "Initial Height (mm): "; cin >> d2;
+    } else {
+        cout << "Initial Radius (mm): "; cin >> d1;
+    }
 
-    double internalDensity = materials[materialIndex].densityG_CM3 * DENSITY_CONVERSION;
-    double finalMass = isRect ? internalDensity*(dim1 * dim2 * linkLength) : internalDensity*(PI * pow(dim1, 2) * linkLength);
+    // Execution
+    optimizeLink(selectedMaterial, shapeChoice, d1, d2, L, mp, alpha);
 
-    selectActuation(finalMass, linkLength, payloadMass, accel, motors, gearboxes);
+    // Final link mass calculation for motor selection
+    double rho = selectedMaterial.density * 1000.0;
+    double L_m = L / 1000.0;
+    double d1_m = d1 / 1000.0;
+    double d2_m = d2 / 1000.0;
+    double ml = (shapeChoice == 1) ? rho*(d1_m*d2_m*L_m) : rho*(PI*pow(d1_m,2)*L_m);
 
-    cout << "\nPress Enter to exit...";
-    cin.ignore();
-    cin.get();
+    selectActuation(ml, L, mp, alpha, motors, gearboxes);
+
     return 0;
 }
