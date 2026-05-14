@@ -7,13 +7,14 @@
 
 using namespace std;
 
-// --- Constants ---
+// =====================================================================================
+//                      1: Classes ,constants Definition
+// =====================================================================================
+
+//1 Basmalla, 2 Nour, 3 ahmed, 4 kimo, 5 hassouna , 6 mdht
+
 const double gravity = 9.81;
 const double PI = 3.1415;
-
-// =====================================================================================
-//                       Classes Definition
-// =====================================================================================
 
 class Material {
 public:
@@ -44,9 +45,8 @@ public:
 };
 
 // =====================================================================================
-//                       Databases (Vectors)
+//                      2: Database Vectors
 // =====================================================================================
-
 vector<Motor> motors = {
     {"ECX FLAT 32 L (100W, 48V)", 0.115, 1445.13, 0.0, 32.0, 0.0, 184.21},
     {"ECX FLAT 42 M (150W, 24V)", 0.285, 842.95,  0.0, 42.0, 0.0, 191.15},
@@ -70,7 +70,7 @@ vector<Material> materials = {
 };
 
 // =====================================================================================
-//                       Part 1: Physics & Optimization Functions
+//                       3: Physics Functions
 // =====================================================================================
 
 void calc_Shape_Properties(int shape, Material mat, Rectangle rect, Circle circ, double& mass_Link, double& Inertia, double& y) {
@@ -96,6 +96,10 @@ double calc_max_Stress(double Torque, double y, double Inertia) {
     return (Torque * y) / Inertia;
 }
 
+// =====================================================================================
+//                       4: Optimize link
+// =====================================================================================
+
 void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double payload_mass, double alpha_max, double& final_Torque) {
     double yield_stress_Pa = mat.yield_Strength * 1e6;
     double current_stress = 0;
@@ -118,7 +122,7 @@ void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double
 }
 
 // =====================================================================================
-//                       Part 2: Actuation Selection Functions
+//                       5: Actuation Selection Functions
 // =====================================================================================
 
 double calc_Output_Torque(Gearbox gear, Motor motor) {
@@ -173,8 +177,9 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
 }
 
 // =====================================================================================
-//                       Main Execution
+//                      6: Main function
 // =====================================================================================
+
 
 int main() {
     int shape, mat_choice;
