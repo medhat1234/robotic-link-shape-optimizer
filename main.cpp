@@ -277,7 +277,7 @@ int main() {
         {
         Material custom_material;
 
-        cout << "Creating custom material... Enter in order: name, yield strength (MPa), density (kg/m³):" << endl;
+        cout << "Creating custom material... Enter in order: name, yield strength (MPa), density (kg/m3):" << endl;
 
         cin >> custom_material.name >> custom_material.yield_Strength >> custom_material.density;
 
@@ -291,7 +291,7 @@ int main() {
 
     cout << "Yield strength: " << materials[actual_mat_idx].yield_Strength << " MPa\n";
 
-    cout << "Density: " << materials[actual_mat_idx].density << " kg/m³\n";
+    cout << "Density: " << materials[actual_mat_idx].density << " kg/m3\n";
 
 
     cout << "-----------------------------------------------------------------" << endl;
@@ -391,8 +391,8 @@ int main() {
 
     cout << "-----------------------------------------------------------" << endl;
     cout << " OPTIMIZED ACTUATION SYSTEM:" << endl;
-    cout << "    Required Torque to Lift System : " << final_Moment << " Nm" << endl;
-    cout << "    Required Operating Speed       : " << w_req << " rad/s" << endl;
+    cout << "    Required Torque  : " << final_Moment << " Nm" << endl;
+    cout << "    Required angular Speed       : " << w_req << " rad/s" << endl;
     cout << "-----------------------------------------------------------" << endl;
 
     // Print selection outcomes
@@ -400,7 +400,7 @@ int main() {
         cout << "[SUCCESS] Best Match Component Combination Found:" << endl;
         cout << "    Selected Motor   : " << motors[winner_motor].name << endl;
         cout << "    Selected Gearbox : " << gearboxes[winner_gearbox].name << endl;
-        cout << "    Total System Cost Score: " << optimized_cost << endl;
+        cout << "    Total System Cost Score: " << optimized_cost << "  (less is better)"<<endl;
     } else {
         cout << "[WARNING] No suitable motor-gearbox combination found!" << endl;
         cout << "          The load is too heavy or speed is too high for your current database." << endl;
