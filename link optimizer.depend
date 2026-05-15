@@ -1,9 +1,9 @@
 # depslib dependency file v1.0
-1778355622 source:d:\asu c++\link optimizer\main.cpp
+1778785204 source:d:\asu c++\link optimizer\main.cpp
 	<iostream>
 	<vector>
 	<string>
 	<cmath>
-	<algorithm>
 	<iomanip>
+	<algorithm>
 
