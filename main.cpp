@@ -173,7 +173,7 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
         cout << "[+] Best Combination Found:" << endl;
         cout << "    Motor   : " << motors[best_motor].name << endl;
         cout << "    Gearbox : " << gearboxes[best_gearbox].name << endl;
-        cout << "    Cost Score: " << min_cost << endl;
+        cout << "    Cost Score: " << min_cost << "(lower is better)"<< endl;
     } else {
         cout << "WARNING: No motor-gearbox combination satisfies the requirements!" << endl;
     }
