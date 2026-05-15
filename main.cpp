@@ -47,25 +47,30 @@ public:
 //                      2: Database Vectors
 // =====================================================================================
 vector<Motor> motors = {
-    {"ECX FLAT 32 L (100W, 48V)", 0.115, 1445.13, 0.0, 32.0, 0.0, 184.21},
-    {"ECX FLAT 42 M (150W, 24V)", 0.285, 842.95,  0.0, 42.0, 0.0, 191.15},
-    {"ECX FLAT 42 M (150W, 48V)", 0.292, 791.68,  0.0, 42.0, 0.0, 191.15},
-    {"ECX FLAT 42 S (100W, 24V)", 0.171, 955.04,  0.0, 42.0, 0.0, 171.36},
-    {"ECX FLAT 42 S (100W, 48V)", 0.173, 914.20,  0.0, 42.0, 0.0, 171.36},
-    {"ECX PRIME 16 M (35W, 12V)", 0.0144, 1623.15, 0.0, 16.0, 0.0, 723.14}
+ // {"name",torque in N m, speedRpm, mass_kg, diameter mm , width mm}
+    {"IDX 70 S, brushless, 600 W",  1.400, 5000,  1.595,  70, 125.5},
+    {"IDX 70 S, brushless, 600 W",  1.400, 5000,    1.595,  70, 125.5},
+    {"IDX 70 M, brushless, 800 W",  2.480, 3670,    2.295,  70, 160.5},
+    {"IDX 70 L, brushless, 900 W",  3.710, 2430,    2.995,  70, 195.5},
+    {"IDX 56 L, brushless, 400 W",  1.040, 3430,    1.196,  56, 160},
 };
 
 vector<Gearbox> gearboxes = {
-    {"134170 GP 22 A", 128.0, 0.9, 0.0, 22.0, 0.0, 0.0},
-    {"143974 GP 22 C", 14.0, 0.9, 0.0, 22.0, 0.0, 0.0},
-    {"143984 GP 22 C", 84.0, 0.9, 0.0, 22.0, 0.0, 0.0},
-    {"166169 GP 32 A", 111.0, 0.9, 0.0, 32.0, 0.0, 0.0},
-    {"166931 GP 32 C", 4.8, 0.9, 0.0, 32.0, 0.0, 0.0}
+//  {"name", efficiency, gearRatio, mass_kg, diameter mm , width mm}
+    {"Planetary Gearhead GP 16 A, Metal Version, Sleeve Bearing", 0.85, 4.4, 0.020, 16, 18.1},
+    {"Planetary Gearhead GP 22 A, Metal Version", 0.59, 84, 0.068, 22, 40},
+    {"Planetary Gearhead GP 22 C", 0.70, 14, 0.055, 22, 35.35},
+    {"Planetary Gearhead GP 32 A, Metal Version", 0.60, 246, 0.226, 32, 54.85},
+    {"Planetary Gearhead GP 42 C, 3 - 15 Nm, Ceramic Version", 0.72, 43, 0.460, 42, 73}
 };
 
 vector<Material> materials = {
-    {"Cast iron", 130, 7.3}, {"Aluminum", 241, 2.7}, {"Steel", 247, 7.58},
-    {"Stainless steel", 275, 7.86}, {"Acrylic", 72, 1.16}, {"Tungsten", 941, 19.25}
+    {"Cast iron", 130, 7.3},
+    {"Aluminum", 241, 2.7},
+    {"Steel", 247, 7.58},
+    {"Stainless steel", 275, 7.86},
+    {"Acrylic", 72, 1.16},
+    {"Tungsten", 941, 19.25}
 };
 
 // =====================================================================================
