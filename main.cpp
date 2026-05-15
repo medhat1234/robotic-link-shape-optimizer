@@ -48,7 +48,7 @@ public:
 // =====================================================================================
 vector<Motor> motors = {
  // {"name",torque in N m, speedRpm, mass_kg, diameter mm , width mm}
-    {"IDX 70 S, brushless, 600 W",  1.400, 5000,  1.595,  70, 125.5},
+    {"ECX TORQUE 22 XL, 45 W",  0.0791, 5320,  0.162,  22, 125.5},
     {"IDX 70 S, brushless, 600 W",  1.400, 5000,    1.595,  70, 125.5},
     {"IDX 70 M, brushless, 800 W",  2.480, 3670,    2.295,  70, 160.5},
     {"IDX 70 L, brushless, 900 W",  3.710, 2430,    2.995,  70, 195.5},
@@ -90,19 +90,21 @@ void calc_Shape_Properties(int shape, Material mat, Rectangle rect, Circle circ,
     }
 }
 
-double calc_Required_Torque(double mass_Link, double payload_mass, double Length, double alpha_max) {
-    double weightEffect = (mass_Link * gravity * (Length / 2.0)) + (payload_mass * gravity * Length);
-    double inertialEffect = (mass_Link * pow(Length / 2.0, 2) * alpha_max) + (payload_mass * pow(Length, 2) * alpha_max);
-    return weightEffect + inertialEffect;
-}
+
 
 double calc_max_Stress(double Torque, double y, double Inertia) {
     return (Torque * y) / Inertia;
 }
 
+
 // =====================================================================================
 //                       4: Optimize link
 // =====================================================================================
+double calc_Required_Torque(double mass_Link, double payload_mass, double Length, double alpha_max) {
+    double weightEffect = (mass_Link * gravity * (Length / 2.0)) + (payload_mass * gravity * Length);
+    double inertialEffect = (mass_Link * pow(Length / 2.0, 2) * alpha_max) + (payload_mass * pow(Length, 2) * alpha_max);
+    return weightEffect + inertialEffect;
+}
 
 void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double payload_mass, double alpha_max, double& final_Torque) {
     double yield_stress_Pa = mat.yield_Strength * 1e6;
@@ -128,6 +130,8 @@ void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double
 // =====================================================================================
 //                       5: Actuation Selection Functions
 // =====================================================================================
+
+
 
 double calc_Output_Torque(Gearbox gear, Motor motor) {
     return motor.torque * gear.gear_ratio * gear.efficiency;
@@ -173,7 +177,7 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
         cout << "[+] Best Combination Found:" << endl;
         cout << "    Motor   : " << motors[best_motor].name << endl;
         cout << "    Gearbox : " << gearboxes[best_gearbox].name << endl;
-        cout << "    Cost Score: " << min_cost << "(lower is better)"<< endl;
+        cout << "    Cost Score: " << min_cost << "  (lower is better)"<< endl;
     } else {
         cout << "WARNING: No motor-gearbox combination satisfies the requirements!" << endl;
     }
