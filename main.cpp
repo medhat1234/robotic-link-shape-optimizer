@@ -14,6 +14,7 @@ using namespace std;
 
 const double gravity = 9.81;
 const double PI = 3.1415;
+const double RPM_to_w = 0.10472;
 
 class Material {
 public:
@@ -138,7 +139,7 @@ double calc_Output_Torque(Gearbox gear, Motor motor) {
 }
 
 double calc_Output_Speed(Gearbox gear, Motor motor) {
-    return motor.speed / gear.gear_ratio;
+    return (motor.speed/ gear.gear_ratio)*RPM_to_w ;
 }
 
 double calc_Cost(Gearbox gear, Motor motor) {
