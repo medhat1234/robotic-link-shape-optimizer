@@ -3,128 +3,147 @@
 #include <string>
 #include <cmath>
 
-
 using namespace std;
 
 // =====================================================================================
-//                      1: Classes ,constants Definition
+//                      1: Classes & Constants Definition
 // =====================================================================================
 
-//1 Basmalla, 2 Nour, 3 ahmed, 4 kimo, 5 hassouna , 6 mdht
-
-const double gravity = 9.81;
+const double gravity = 9.81;       // m/s²
 const double PI = 3.1415;
-const double RPM_to_w = 0.10472;
+const double RPM_to_w = 0.10472;   // Converts RPM → rad/s  (2π/60)
 
 class Material {
 public:
     string name;
-    double yield_Strength, density;
+    double yield_Strength;  // MPa
+    double density;         // g/cm³
 };
 
 class Motor {
 public:
     string name;
-    double torque, speed, mass, diameter, width, cost;
+    double torque;    // N·m (rated)
+    double speed;     // RPM
+    double mass;      // kg
+    double diameter;  // mm
+    double width;     // mm
+    double cost;
 };
 
 class Gearbox {
 public:
     string name;
-    double gear_ratio, efficiency, mass, diameter, width, cost;
+    double gear_ratio;
+    double efficiency;  // fraction (0–1)
+    double mass;        // kg
+    double diameter;    // mm
+    double width;       // mm
+    double cost;
 };
 
 class Rectangle {
 public:
-    double width, length, height;
+    double width, length, height;  // meters
 };
 
 class Circle {
 public:
-    double length, radius;
+    double length, radius;  // meters
 };
 
 // =====================================================================================
 //                      2: Database Vectors
 // =====================================================================================
+
 vector<Motor> motors = {
- // {"name",torque in N m, speedRpm, mass_kg, diameter mm , width mm}
-    {"ECX TORQUE 22 XL, 45 W",  0.0791, 5320,  0.162,  22, 125.5},
-    {"IDX 70 S, brushless, 600 W",  1.400, 5000,    1.595,  70, 125.5},
-    {"IDX 70 M, brushless, 800 W",  2.480, 3670,    2.295,  70, 160.5},
-    {"IDX 70 L, brushless, 900 W",  3.710, 2430,    2.995,  70, 195.5},
-    {"IDX 56 L, brushless, 400 W",  1.040, 3430,    1.196,  56, 160},
+ // {"name", torque (N·m), speed (RPM), mass (kg), diameter (mm), width (mm)}
+    {"ECX TORQUE 22 XL, 45 W",      0.0791, 5320, 0.162, 22, 125.5},
+    {"IDX 70 S, brushless, 600 W",  1.400,  5000, 1.595, 70, 125.5},
+    {"IDX 70 M, brushless, 800 W",  2.480,  3670, 2.295, 70, 160.5},
+    {"IDX 70 L, brushless, 900 W",  3.710,  2430, 2.995, 70, 195.5},
+    {"IDX 56 L, brushless, 400 W",  1.040,  3430, 1.196, 56, 160},
 };
 
 vector<Gearbox> gearboxes = {
-//  {"name", efficiency, gearRatio, mass_kg, diameter mm , width mm}
-    {"Planetary Gearhead GP 16 A, Metal Version, Sleeve Bearing", 0.85, 4.4, 0.020, 16, 18.1},
-    {"Planetary Gearhead GP 22 A, Metal Version", 0.59, 84, 0.068, 22, 40},
-    {"Planetary Gearhead GP 22 C", 0.70, 14, 0.055, 22, 35.35},
-    {"Planetary Gearhead GP 32 A, Metal Version", 0.60, 246, 0.226, 32, 54.85},
-    {"Planetary Gearhead GP 42 C, 3 - 15 Nm, Ceramic Version", 0.72, 43, 0.460, 42, 73}
+ // {"name", efficiency, gear_ratio, mass (kg), diameter (mm), width (mm)}
+    {"Planetary Gearhead GP 16 A, Metal Version, Sleeve Bearing", 0.85,   4.4, 0.020, 16, 18.1},
+    {"Planetary Gearhead GP 22 A, Metal Version",                 0.59,  84.0, 0.068, 22, 40},
+    {"Planetary Gearhead GP 22 C",                                0.70,  14.0, 0.055, 22, 35.35},
+    {"Planetary Gearhead GP 32 A, Metal Version",                 0.60, 246.0, 0.226, 32, 54.85},
+    {"Planetary Gearhead GP 42 C, 3 - 15 Nm, Ceramic Version",   0.72,  43.0, 0.460, 42, 73},
 };
 
 vector<Material> materials = {
-    {"Cast iron", 130, 7.3},
-    {"Aluminum", 241, 2.7},
-    {"Steel", 247, 7.58},
+    {"Cast iron",       130, 7.3},
+    {"Aluminum",        241, 2.7},
+    {"Steel",           247, 7.58},
     {"Stainless steel", 275, 7.86},
-    {"Acrylic", 72, 1.16},
-    {"Tungsten", 941, 19.25}
+    {"Acrylic",          72, 1.16},
+    {"Tungsten",        941, 19.25},
 };
 
 // =====================================================================================
 //                       3: Physics Functions
 // =====================================================================================
 
-void calc_Shape_Properties(int shape, Material mat, Rectangle rect, Circle circ, double& mass_Link, double& Inertia, double& y) {
-    double density_kg = mat.density * 1000.0;
+// Computes mass, second moment of area (Inertia), and the outer fiber distance (y)
+// for stress calculation. density stored as g/cm³ → converted to kg/m³ (*1000).
+void calc_Shape_Properties(int shape, Material mat, Rectangle rect, Circle circ,
+                            double& mass_Link, double& Inertia, double& y) {
+    double density_kg = mat.density * 1000.0;  // g/cm³ → kg/m³
     if (shape == 1) {
         mass_Link = density_kg * (rect.width * rect.height * rect.length);
-        Inertia = (rect.width * pow(rect.height, 3)) / 12.0;
-        y = rect.height / 2.0;
+        Inertia   = (rect.width * pow(rect.height, 3)) / 12.0;  // I = bh³/12 (bending about neutral axis)
+        y         = rect.height / 2.0;
     } else {
         mass_Link = density_kg * (PI * pow(circ.radius, 2) * circ.length);
-        Inertia = (PI * pow(circ.radius, 4)) / 4.0;
-        y = circ.radius;
+        Inertia   = (PI * pow(circ.radius, 4)) / 4.0;  // I = πr⁴/4
+        y         = circ.radius;
     }
 }
 
-
-
+// Bending stress at the outer fiber: σ = M·y / I  (flexure formula)
 double calc_max_Stress(double Torque, double y, double Inertia) {
     return (Torque * y) / Inertia;
 }
 
+// =====================================================================================
+//                       4: Link Optimization
+// =====================================================================================
 
-// =====================================================================================
-//                       4: Optimize link
-// =====================================================================================
+// Torque at the joint = static weight moment + dynamic (inertial) moment.
+// Assumes uniform link mass and a point payload at the tip.
 double calc_Required_Torque(double mass_Link, double payload_mass, double Length, double alpha_max) {
-    double weightEffect = (mass_Link * gravity * (Length / 2.0)) + (payload_mass * gravity * Length);
+    double weightEffect   = (mass_Link * gravity * (Length / 2.0)) + (payload_mass * gravity * Length);
     double inertialEffect = (mass_Link * pow(Length / 2.0, 2) * alpha_max) + (payload_mass * pow(Length, 2) * alpha_max);
     return weightEffect + inertialEffect;
 }
 
-void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double payload_mass, double alpha_max, double& final_Torque) {
-    double yield_stress_Pa = mat.yield_Strength * 1e6;
-    double current_stress = 0;
+// Iteratively scales cross-section until bending stress sits within 5% below yield.
+// Grows dimensions by 1% when over-stressed, shrinks by 1% when under-utilized.
+// WARNING: convergence assumed — no iteration cap; add one for production use.
+void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ,
+                  double payload_mass, double alpha_max, double& final_Torque) {
+    double yield_stress_Pa = mat.yield_Strength * 1e6;  // MPa → Pa
+    double current_stress  = 0;
     double mass_L, Inert, y_val;
     double L = (shape == 1) ? rect.length : circ.length;
 
     while (true) {
         calc_Shape_Properties(shape, mat, rect, circ, mass_L, Inert, y_val);
-        final_Torque = calc_Required_Torque(mass_L, payload_mass, L, alpha_max);
+        final_Torque   = calc_Required_Torque(mass_L, payload_mass, L, alpha_max);
         current_stress = calc_max_Stress(final_Torque, y_val, Inert);
 
         if (current_stress > yield_stress_Pa) {
+            // Section too weak → scale up
             if (shape == 1) { rect.width *= 1.01; rect.height *= 1.01; }
-            else { circ.radius *= 1.01; }
+            else             { circ.radius *= 1.01; }
         } else if (current_stress < (yield_stress_Pa * 0.95)) {
+            // Material underutilized → trim down
             if (shape == 1) { rect.width *= 0.99; rect.height *= 0.99; }
-            else { circ.radius *= 0.99; }
-        } else { break; }
+            else             { circ.radius *= 0.99; }
+        } else { break; }  // Within the 95–100% utilization band
     }
 }
 
@@ -132,27 +151,32 @@ void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ, double
 //                       5: Actuation Selection Functions
 // =====================================================================================
 
-
-
+// Actual output torque accounts for gear ratio amplification and efficiency losses
 double calc_Output_Torque(Gearbox gear, Motor motor) {
     return motor.torque * gear.gear_ratio * gear.efficiency;
 }
 
+// Output shaft speed after gear reduction (RPM → rad/s)
 double calc_Output_Speed(Gearbox gear, Motor motor) {
-    return (motor.speed/ gear.gear_ratio)*RPM_to_w ;
+    return (motor.speed / gear.gear_ratio) * RPM_to_w;
 }
 
+// Proxy cost metric: penalizes total mass + footprint (diameter + width).
+// Lower score = more compact and lightweight combination.
 double calc_Cost(Gearbox gear, Motor motor) {
-    double total_mass = gear.mass + motor.mass;
-    double max_diameter = max(gear.diameter, motor.diameter);
-    double total_width = gear.width + motor.width;
+    double total_mass    = gear.mass + motor.mass;
+    double max_diameter  = max(gear.diameter, motor.diameter);
+    double total_width   = gear.width + motor.width;
     return total_mass + (max_diameter / 100.0) + (total_width / 100.0);
 }
 
-void select_Optimal_Drive(double Torque_required, double w_required, const vector<Motor>& motors, const vector<Gearbox>& gearboxes) {
-    double min_cost = 1e9;
-    int best_motor = 100;
-    int best_gearbox = 100;
+// Exhaustive search over all motor-gearbox pairs.
+// Selects the pair with the lowest cost score that meets both torque and speed requirements.
+void select_Optimal_Drive(double Torque_required, double w_required,
+                          const vector<Motor>& motors, const vector<Gearbox>& gearboxes) {
+    double min_cost    = 1e9;
+    int    best_motor  = 100;  // Sentinel: 100 = "none found"
+    int    best_gearbox = 100;
 
     for (int i = 0; i < motors.size(); i++) {
         for (int j = 0; j < gearboxes.size(); j++) {
@@ -162,8 +186,8 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
             if (T_out >= Torque_required && w_out >= w_required) {
                 double current_cost = calc_Cost(gearboxes[j], motors[i]);
                 if (current_cost < min_cost) {
-                    min_cost = current_cost;
-                    best_motor = i;
+                    min_cost     = current_cost;
+                    best_motor   = i;
                     best_gearbox = j;
                 }
             }
@@ -173,12 +197,12 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
     cout << "\n================= Drive Selection Results =================" << endl;
     if (best_motor != 100) {
         cout << "Required Torque : " << Torque_required << " Nm" << endl;
-        cout << "Required Speed  : " << w_required << " rad/s" << endl;
+        cout << "Required Speed  : " << w_required      << " rad/s" << endl;
         cout << "---------------------------------------------------------" << endl;
         cout << "[+] Best Combination Found:" << endl;
-        cout << "    Motor   : " << motors[best_motor].name << endl;
-        cout << "    Gearbox : " << gearboxes[best_gearbox].name << endl;
-        cout << "    Cost Score: " << min_cost << "  (lower is better)"<< endl;
+        cout << "    Motor   : " << motors[best_motor].name        << endl;
+        cout << "    Gearbox : " << gearboxes[best_gearbox].name   << endl;
+        cout << "    Cost Score: " << min_cost << "  (lower is better)" << endl;
     } else {
         cout << "WARNING: No motor-gearbox combination satisfies the requirements!" << endl;
     }
@@ -186,61 +210,51 @@ void select_Optimal_Drive(double Torque_required, double w_required, const vecto
 }
 
 // =====================================================================================
-//                      6: Main function
+//                      6: Main Function
 // =====================================================================================
-
 
 int main() {
     int shape, mat_choice;
     double L, mp, alpha, w_req;
-    Rectangle rect; Circle circ;
+    Rectangle rect;
+    Circle circ;
 
     cout << "Available Materials:\n";
-    for(int i=0; i<materials.size(); i++) {
-        cout << i+1 << ": " << materials[i].name << endl;
-    }
-    // Add a new option for Custom Material
+    for (int i = 0; i < materials.size(); i++)
+        cout << i + 1 << ": " << materials[i].name << endl;
+
     int custom_option = materials.size() + 1;
     cout << custom_option << ": [Add Custom Material]" << endl;
-
     cout << "Select Material (1-" << custom_option << "): ";
     cin >> mat_choice;
 
     Material selectedMaterial;
 
     if (mat_choice == custom_option) {
-        // Logic to add a new material on the fly
         string c_name;
         double c_yield, c_density;
         cout << "Enter Material Name: ";
-        cin.ignore(); // Clear buffer
+        cin.ignore();  // Flush newline left in buffer by previous cin >>
         getline(cin, c_name);
         cout << "Enter Yield Strength (MPa): ";
         cin >> c_yield;
         cout << "Enter Density (g/cm^3): ";
         cin >> c_density;
-
         selectedMaterial = {c_name, c_yield, c_density};
-        // Optional: Add it to the vector if you want to save it for this session
         materials.push_back(selectedMaterial);
-    } else if (mat_choice > 0 && mat_choice <= materials.size()) {
+    } else if (mat_choice > 0 && mat_choice <= (int)materials.size()) {
         selectedMaterial = materials[mat_choice - 1];
     } else {
         cout << "Invalid selection!" << endl;
         return 1;
     }
 
-    // --- Rest of the inputs ---
     cout << "\nSelect Shape (1:Rectangle, 2:Circle): ";
     cin >> shape;
-    cout << "Link Length (m): ";
-    cin >> L;
-    cout << "Payload Mass (kg): ";
-    cin >> mp;
-    cout << "Max Acceleration (rad/s^2): ";
-    cin >> alpha;
-    cout << "Required Speed (rad/s): ";
-    cin >> w_req;
+    cout << "Link Length (m): ";        cin >> L;
+    cout << "Payload Mass (kg): ";      cin >> mp;
+    cout << "Max Acceleration (rad/s^2): "; cin >> alpha;
+    cout << "Required Speed (rad/s): "; cin >> w_req;
 
     if (shape == 1) {
         rect.length = L;
@@ -252,27 +266,31 @@ int main() {
         cin >> circ.radius;
     }
 
-    // --- Logic Execution (Using selectedMaterial) ---
     double final_Torque = 0.0;
 
-    // 1. Optimize Link & Get required Torque
+    // Step 1: Find optimal cross-section and the resulting joint torque demand
     optimizeLink(shape, selectedMaterial, rect, circ, mp, alpha, final_Torque);
 
-    // 2. Display Optimized Dimensions
+    // Step 2: Report optimized geometry
     cout << "\n--- Optimized Link Results ---" << endl;
     cout << "Material Used: " << selectedMaterial.name << endl;
-    if (shape == 1) cout << "Final Dimensions: " << rect.width << " x " << rect.height << " m" << endl;
-    else cout << "Final Radius: " << circ.radius << " m" << endl;
+    if (shape == 1)
+        cout << "Final Dimensions: " << rect.width << " x " << rect.height << " m" << endl;
+    else
+        cout << "Final Radius: " << circ.radius << " m" << endl;
 
-    // 3. Recalculate Final Mass
+    // Step 3: Final mass using optimized dimensions
     double rho = selectedMaterial.density * 1000.0;
-    double mass_final = (shape == 1) ? rho*(rect.width*rect.height*L) : rho*(PI*pow(circ.radius,2)*L);
+    double mass_final = (shape == 1)
+        ? rho * (rect.width * rect.height * L)
+        : rho * (PI * pow(circ.radius, 2) * L);
     cout << "Final Link Mass: " << mass_final << " kg" << endl;
 
-    // 4. Select the Best Drive
+    // Step 4: Pick the lightest motor-gearbox pair that satisfies torque & speed
     select_Optimal_Drive(final_Torque, w_req, motors, gearboxes);
 
     cout << "\nPress Enter to Exit...";
-    cin.ignore(); cin.get();
+    cin.ignore();
+    cin.get();
     return 0;
 }
