@@ -151,61 +151,42 @@ void optimizeLink(int shape, Material mat, Rectangle& rect, Circle& circ,
 //                       5: Actuation Selection Functions
 // =====================================================================================
 
-// Actual output torque accounts for gear ratio amplification and efficiency losses
-double calc_Output_Torque(Gearbox gear, Motor motor) {
-    return motor.torque * gear.gear_ratio * gear.efficiency;
-}
+void selectActuation(double Arm_mass_kg, double Link_length_mm, double Paylaod_mass_kg, double Angular_acceleration, double Angular_velocity_req, const vector<Motor>& motors, const vector<Gearbox>& gearboxes) {
+    // convert everything to SI units for torque calculation.
+    double Link_length_m = Link_length_mm / 1000.0;
 
-// Output shaft speed after gear reduction (RPM → rad/s)
-double calc_Output_Speed(Gearbox gear, Motor motor) {
-    return (motor.speed / gear.gear_ratio) * RPM_to_w;
-}
+    double Torque_req = (Arm_mass_kg * gravity * (Link_length_m / 2.0)) + (Paylaod_mass_kg * gravity * Link_length_m)
+                        + (Arm_mass_kg * pow(Link_length_m / 2.0, 2) * Angular_acceleration)
+                        + (Paylaod_mass_kg * pow(Link_length_m, 2) * Angular_acceleration);
 
-// Proxy cost metric: penalizes total mass + footprint (diameter + width).
-// Lower score = more compact and lightweight combination.
-double calc_Cost(Gearbox gear, Motor motor) {
-    double total_mass    = gear.mass + motor.mass;
-    double max_diameter  = max(gear.diameter, motor.diameter);
-    double total_width   = gear.width + motor.width;
-    return total_mass + (max_diameter / 100.0) + (total_width / 100.0);
-}
+    // comparing between motors and gearboxes.
+    double bestCost = 1e18; // limit of the cost .
+    string bestCombo = "None Found";
 
-// Exhaustive search over all motor-gearbox pairs.
-// Selects the pair with the lowest cost score that meets both torque and speed requirements.
-void select_Optimal_Drive(double Torque_required, double w_required,
-                          const vector<Motor>& motors, const vector<Gearbox>& gearboxes) {
-    double min_cost    = 1e9;
-    int    best_motor  = 100;  // Sentinel: 100 = "none found"
-    int    best_gearbox = 100;
+    // by using range based for loops.
+    for (const auto &motor : motors) {
+        for (const auto &gearbox : gearboxes) {
+            double Torque_out = motor.torque * gearbox.gear_ratio * gearbox.efficiency;
 
-    for (int i = 0; i < motors.size(); i++) {
-        for (int j = 0; j < gearboxes.size(); j++) {
-            double T_out = calc_Output_Torque(gearboxes[j], motors[i]);
-            double w_out = calc_Output_Speed(gearboxes[j], motors[i]);
+            if (Torque_out >= Torque_req && ((motor.speed / gearbox.gear_ratio) * gearbox.efficiency) >= Angular_velocity_req) {
+                double totalMass = motor.mass + gearbox.mass;
 
-            if (T_out >= Torque_required && w_out >= w_required) {
-                double current_cost = calc_Cost(gearboxes[j], motors[i]);
-                if (current_cost < min_cost) {
-                    min_cost     = current_cost;
-                    best_motor   = i;
-                    best_gearbox = j;
+                // We use the larger diameter of the Gearbox or Motor.
+                double maxDiam = max(motor.diameter, gearbox.diameter);
+                double totalWidth = motor.width + gearbox.width;
+                double cost = totalMass + (maxDiam / 100.0) + (totalWidth / 100.0);
+
+                if (cost < bestCost) {
+                    bestCost = cost;
+                    bestCombo = motor.name + " + " + gearbox.name;
                 }
             }
         }
     }
 
-    cout << "\n================= Drive Selection Results =================" << endl;
-    if (best_motor != 100) {
-        cout << "Required Torque : " << Torque_required << " Nm" << endl;
-        cout << "Required Speed  : " << w_required      << " rad/s" << endl;
-        cout << "---------------------------------------------------------" << endl;
-        cout << "[+] Best Combination Found:" << endl;
-        cout << "    Motor   : " << motors[best_motor].name        << endl;
-        cout << "    Gearbox : " << gearboxes[best_gearbox].name   << endl;
-        cout << "    Cost Score: " << min_cost << "  (lower is better)" << endl;
-    } else {
-        cout << "WARNING: No motor-gearbox combination satisfies the requirements!" << endl;
-    }
+    cout << "\n--- Actuation Selection ---" << endl;
+    cout << "Required Torque: " << Torque_req << " Nm" << endl;
+    cout << "Best Combination: " << bestCombo << " (Cost Score: " << bestCost << ")" << endl;
     cout << "===========================================================" << endl;
 }
 
@@ -218,7 +199,8 @@ int main() {
     double L, mp, alpha, w_req;
     Rectangle rect;
     Circle circ;
-
+    cout << "Robotic Arm Link & Actuator Optimization Tool, Team 7" << endl;
+    cout << "===========================================================" << endl<<endl;
     cout << "Available Materials:\n";
     for (int i = 0; i < materials.size(); i++)
         cout << i + 1 << ": " << materials[i].name << endl;
@@ -287,8 +269,7 @@ int main() {
     cout << "Final Link Mass: " << mass_final << " kg" << endl;
 
     // Step 4: Pick the lightest motor-gearbox pair that satisfies torque & speed
-    select_Optimal_Drive(final_Torque, w_req, motors, gearboxes);
-
+    selectActuation(mass_final, L * 1000.0, mp, alpha, w_req, motors, gearboxes);
     cout << "\nPress Enter to Exit...";
     cin.ignore();
     cin.get();
